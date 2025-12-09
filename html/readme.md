@@ -1,51 +1,93 @@
-## 📦 簡易倉儲管理系統 (WMS)
-[倉儲管理系統介面 HTML 程式碼](https://github.com/jason94530721/Warehouse-management.github.io/tree/main/html)
+## 📦 倉儲管理系統資料庫文件 (Warehouse Management System Database Documentation)
 
-此專案是一個簡化的倉儲管理系統後端服務，使用 **ASP.NET Core Minimal APIs** 構建，結合 **SQL Server** 處理主要業務數據（如庫存、訂單、明細），並利用 **MongoDB** 記錄所有關鍵的稽核日誌。
+本文件概述了倉儲管理系統所使用的 **關聯式資料庫結構 (SQL)** 及其相關操作查詢範例，以及獨立的 **MongoDB 稽核日誌資料庫** 查詢範例。
 
-### 🛠️ 技術棧
+---
 
-| 類別 | 技術 | 備註 |
+### 🔗 相關專案連結
+
+| 專案名稱 | 描述 | 連結 |
 | :--- | :--- | :--- |
-| **後端** | ASP.NET Core (.NET 8+) | 使用 Minimal APIs 模式 |
-| **主要資料庫** | SQL Server | 庫存、訂單等業務資料 |
-| **日誌/稽核資料庫** | MongoDB | 專門用於儲存稽核日誌 (Audit Logs) |
-| **前端** | HTML, JavaScript | 基礎網頁介面，使用 Tailwind CSS 樣式 |
-| **C# 函式庫** | Dapper, MongoDB.Driver | 用於資料庫操作 |
+| **系統介面 (Frontend)** | 程式碼位於一個獨立的 GitHub Pages 專案中，包含前端的 HTML、CSS 和 JavaScript 文件。 | [倉儲管理系統介面 HTML 程式碼](https://github.com/jason94530721/Warehouse-management.github.io/tree/main/html) |
 
 ---
 
-### 🚀 專案結構概覽
+### 1. 關聯式資料庫結構 (SQL Schema)
 
-* **`Program.cs`**: 後端服務的核心檔案，包含 Minimal API 的路由定義、SQL Server 和 MongoDB 的連線配置、資料模型 (Models/Records) 定義，以及稽核日誌的寫入邏輯。
-* **`index.html`**: 員工登入頁面。
-* **`dashboard.html`**: 員工登入後的倉儲儀表板，顯示倉庫、庫存、入庫/出庫訂單明細等資訊。
-* **`audit.html`**: 專門用於顯示 MongoDB 稽核日誌的儀表板。
-* **`styles.css`**: 前端頁面的通用樣式檔案。
+這是系統的核心資料模型，管理員工、產品、倉庫及所有進出庫紀錄。
+
+| 表格名稱 | 描述 | 主要欄位 | 關聯/外鍵 |
+| :--- | :--- | :--- | :--- |
+| **員工** | 負責管理倉庫的人員資訊。 | `員工編號` (PK), `姓名` | |
+| **倉庫** | 儲存產品的實體位置。 | `倉庫編號` (PK), `名稱` | `員工編號` (FK) -> 員工 |
+| **產品** | 系統中所有可庫存的物品。 | `產品編號` (PK), `名稱` | |
+| **庫存** | 追蹤特定產品在特定倉庫中的數量。 | `產品編號` (PK, FK), `倉庫編號` (PK, FK) | `產品編號` (FK) -> 產品, `倉庫編號` (FK) -> 倉庫 |
+| **入庫訂單** | 記錄產品進入倉庫的單據。 | `入庫訂單編號` (PK), `收貨日期` | `倉庫編號` (FK) -> 倉庫 |
+| **出庫訂單** | 記錄產品離開倉庫的單據。 | `出庫訂單編號` (PK), `出貨日期` | `倉庫編號` (FK) -> 倉庫 |
+| **入庫明細** | 記錄單筆入庫訂單中各產品的數量。 | `入庫明細編號` (PK) | `入庫訂單編號` (FK) -> 入庫訂單, `產品編號` (FK) -> 產品 |
+| **出庫明細** | 記錄單筆出庫訂單中各產品的數量。 | `出庫明細編號` (PK) | `出庫訂單編號` (FK) -> 出庫訂單, `產品編號` (FK) -> 產品 |
 
 ---
 
-### ⚙️ 環境設定與運行
+### 2. SQL 查詢範例 (Sample Queries)
 
-#### 1. 前置條件
+以下範例涵蓋資料庫的增、刪、改、查 (CRUD) 等基本操作。
 
-在運行此專案之前，您需要準備以下環境：
+#### 🔹 資料查詢 (SELECT)
 
-* **[.NET 8 SDK](https://dotnet.microsoft.com/download)** 或更高版本
-* **SQL Server 實例** (LocalDB, Express, 或 Docker 實例皆可)
-* **MongoDB 實例** (本地安裝或 MongoDB Atlas 雲端實例)
+| 類型 | 描述 | 範例 SQL |
+| :--- | :--- | :--- |
+| **條件查詢** | 查詢員工編號為 1 的員工所管理的倉庫。 | `SELECT w.* FROM 倉庫 w WHERE w.員工編號 = 1;` |
+| **連接查詢** | 查詢員工姓名及其管理的倉庫。 | `SELECT e.姓名, w.* FROM 員工 e JOIN 倉庫 w ON e.員工編號 = w.員工編號;` |
+| **分組聚合** | 計算每位員工管理的倉庫數量。 | `SELECT e.姓名, COUNT(w.倉庫編號) FROM 員工 e LEFT JOIN 倉庫 w ON e.員工編號 = w.員工編號 GROUP BY e.姓名;` |
+| **庫存統計** | 每個倉庫的總庫存量。 | `SELECT 倉庫編號, SUM(數量) AS 總庫存數量 FROM 庫存 GROUP BY 倉庫編號;` |
 
-#### 2. 資料庫配置
+#### 📝 資料操作 (DML) 範例
 
-* **`appsettings.json`**: 在此檔案中設定您的資料庫連線字串。
+* **新增 (INSERT)：**
+    ```sql
+    INSERT INTO 員工 (姓名, 聯絡資訊) VALUES (N'新員工', N'0900-111-222');
+    ```
+* **更新 (UPDATE)：**
+    ```sql
+    UPDATE 員工 SET 聯絡資訊 = N'0900-999-000' WHERE 員工編號 = 1;
+    ```
+* **刪除 (DELETE)：**
+    ```sql
+    DELETE FROM 員工 WHERE 員工編號 = 5;
+    ```
 
-```json
-{
-  "ConnectionStrings": {
-    // 替換為您的 SQL Server 連線字串
-    "DefaultConnection": "Server=...;Database=WMS_DB;User Id=...;Password=...;",
-    
-    // 替換為您的 MongoDB 連線字串 (用於 AuditLogDB)
-    "MongoConnection": "mongodb://localhost:27017" 
-  }
-}
+---
+
+### 3. MongoDB 稽核日誌查詢
+
+系統的非結構化資料，如操作日誌 (Audit Logs)，儲存在 MongoDB 的 `auditLogs` Collection 中。
+
+#### 🔍 常用查詢
+
+| 查詢名稱 | 目的 | 類型 | 關鍵查詢條件 |
+| :--- | :--- | :--- | :--- |
+| **Find\_Latest\_100\_Records** | 查找最近發生的 100 筆稽核記錄。 | `find` | 排序: `timestamp: -1`, 限制: `100` |
+| **Find\_Stock\_Initialization** | 查找特定倉庫 (ID=1) 的產品初始化記錄。 | `find` | `actionType: "INITIALIZE_STOCK", data.warehouseId: 1` |
+
+#### 📊 聚合 (Aggregate) 範例
+
+* **計算每種動作類型發生的總次數 (Aggregate\_Action\_Counts)**
+    ```json
+    [
+      { "$group": { "_id": "$actionType", "count": { "$sum": 1 } } },
+      { "$sort": { "count": -1 } }
+    ]
+    ```
+* **計算某一天特定員工 (ID=1001) 的活動總數**
+    ```json
+    [
+      {
+        "$match": {
+          "empId": 1001,
+          "timestamp": { "$gte": { "$date": "2025-12-01T00:00:00.000Z" } ... }
+        }
+      },
+      { "$group": { "_id": "$actionType", "count": { "$sum": 1 } } }
+    ]
+    ```
