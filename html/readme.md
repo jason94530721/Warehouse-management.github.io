@@ -1,5 +1,5 @@
 ## 📦 簡易倉儲管理系統 (WMS)
-
+[倉儲管理系統介面 HTML 程式碼](https://github.com/jason94530721/Warehouse-management.github.io/tree/main/html)
 此專案是一個簡化的倉儲管理系統後端服務，使用 **ASP.NET Core Minimal APIs** 構建，結合 **SQL Server** 處理主要業務數據（如庫存、訂單、明細），並利用 **MongoDB** 記錄所有關鍵的稽核日誌。
 
 ### 🛠️ 技術棧
