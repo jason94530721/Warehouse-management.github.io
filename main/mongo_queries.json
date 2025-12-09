@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Find_Latest_100_Records",
+    "description": "查找最近發生的 100 筆稽核記錄，按時間降序排列。",
+    "type": "find",
+    "collection": "auditLogs",
+    "query": {},
+    "options": {
+      "sort": { "timestamp": -1 },
+      "limit": 100
+    }
+  },
+  {
+    "name": "Find_Stock_Initialization_By_Warehouse",
+    "description": "查找特定倉庫的所有產品初始化記錄。",
+    "type": "find",
+    "collection": "auditLogs",
+    "query": {
+      "actionType": "INITIALIZE_STOCK",
+      "data.warehouseId": 1
+    },
+    "options": {
+      "sort": { "timestamp": -1 }
+    }
+  },
+  {
+    "name": "Aggregate_Action_Counts",
+    "description": "計算每種動作類型發生的總次數。",
+    "type": "aggregate",
+    "collection": "auditLogs",
+    "pipeline": [
+      {
+        "$group": {
+          "_id": "$actionType",
+          "count": { "$sum": 1 }
+        }
+      },
+      {
+        "$sort": {
+          "count": -1
+        }
+      }
+    ]
+  },
+  {
+    "name": "Aggregate_Employee_Activity_By_Date",
+    "description": "計算某一天特定員工的活動總數。",
+    "type": "aggregate",
+    "collection": "auditLogs",
+    "pipeline": [
+      {
+        "$match": {
+          "empId": 1001,
+          "timestamp": {
+            "$gte": { "$date": "2025-12-01T00:00:00.000Z" },
+            "$lt": { "$date": "2025-12-02T00:00:00.000Z" }
+          }
+        }
+      },
+      {
+        "$group": {
+          "_id": "$actionType",
+          "count": { "$sum": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "name": "Insert_Test_Record",
+    "description": "插入一條測試用的稽核記錄 (僅用於測試寫入)。",
+    "type": "insertOne",
+    "collection": "auditLogs",
+    "document": {
+      "empId": 9999,
+      "actionType": "TEST_INSERT",
+      "endpoint": "/api/test",
+      "timestamp": {
+        "$date": "2025-12-04T00:00:00.000Z"
+      }
+    }
+  }
+]
